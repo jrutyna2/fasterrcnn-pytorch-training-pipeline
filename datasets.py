@@ -8,7 +8,7 @@ import random
 from xml.etree import ElementTree as et
 from torch.utils.data import Dataset, DataLoader
 from utils.transforms import (
-    get_train_transform, 
+    get_train_transform,
     get_valid_transform,
     get_train_aug,
     transform_mosaic
@@ -19,14 +19,14 @@ from tqdm.auto import tqdm
 # the dataset class
 class CustomDataset(Dataset):
     def __init__(
-        self, 
-        images_path, 
-        labels_path, 
-        img_size, 
-        classes, 
-        transforms=None, 
+        self,
+        images_path,
+        labels_path,
+        img_size,
+        classes,
+        transforms=None,
         use_train_aug=False,
-        train=False, 
+        train=False,
         mosaic=1.0,
         square_training=False
     ):
@@ -44,10 +44,14 @@ class CustomDataset(Dataset):
         self.log_annot_issue_x = True
         self.mosaic = mosaic
         self.log_annot_issue_y = True
-        
+
         # get all the image paths in sorted order
         for file_type in self.image_file_types:
-            self.all_image_paths.extend(glob.glob(os.path.join(self.images_path, file_type)))
+            image_paths = glob.glob(os.path.join(self.images_path, file_type))
+#           print(f"Looking for {file_type} files in {self.images_path}: Found {len(image_paths)} files")
+            self.all_image_paths.extend(image_paths)
+        # for file_type in self.image_file_types:
+        #     self.all_image_paths.extend(glob.glob(os.path.join(self.images_path, file_type)))
         self.all_annot_paths = glob.glob(os.path.join(self.labels_path, '*.xml'))
         self.all_images = [image_path.split(os.path.sep)[-1] for image_path in self.all_image_paths]
         self.all_images = sorted(self.all_images)
@@ -57,12 +61,21 @@ class CustomDataset(Dataset):
     def read_and_clean(self):
         print('Checking Labels and images...')
         # Discard any image file when no annotation file is found.
+        count = 0
         for image_name in tqdm(self.all_images, total=len(self.all_images)):
             possible_xml_name = os.path.join(self.labels_path, os.path.splitext(image_name)[0]+'.xml')
+#           print(f"Checking image: {image_name}")
+#            print(f"Expected XML path: {possible_xml_name}")
+            count+=1
             if possible_xml_name not in self.all_annot_paths:
                 print(f"{possible_xml_name} not found...")
                 print(f"Removing {image_name} image")
                 self.all_images = [image_instance for image_instance in self.all_images if image_instance != image_name]
+        if (count == 0):
+            print("no image_name in tqdm(self.all_images, total=len(self.all_images))....")
+        else:
+            print("loop ran!")
+
 
     def resize(self, im, square=False):
         if square:
@@ -84,7 +97,7 @@ class CustomDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB).astype(np.float32)
         image_resized = self.resize(image, square=self.square_training)
         image_resized /= 255.0
-        
+
         # Capture the corresponding XML file for getting the annotations.
         annot_filename = os.path.splitext(image_name)[0] + '.xml'
         annot_file_path = os.path.join(self.labels_path, annot_filename)
@@ -92,11 +105,11 @@ class CustomDataset(Dataset):
         boxes = []
         orig_boxes = []
         labels = []
-        
+
         # Get the height and width of the image.
         image_width = image.shape[1]
         image_height = image.shape[0]
-                
+
         # Box coordinates for xml files are extracted and corrected for image size given.
         # try:
         tree = et.parse(annot_file_path)
@@ -105,7 +118,7 @@ class CustomDataset(Dataset):
             # Map the current object name to `classes` list to get
             # the label index and append to `labels` list.
             labels.append(self.classes.index(member.find('name').text))
-            
+
             # xmin = left corner x-coordinates
             xmin = float(member.find('bndbox').find('xmin').text)
             # xmax = right corner x-coordinates
@@ -116,17 +129,17 @@ class CustomDataset(Dataset):
             ymax = float(member.find('bndbox').find('ymax').text)
 
             xmin, ymin, xmax, ymax = self.check_image_and_annotation(
-                xmin, 
-                ymin, 
-                xmax, 
-                ymax, 
-                image_width, 
-                image_height, 
+                xmin,
+                ymin,
+                xmax,
+                ymax,
+                image_width,
+                image_height,
                 orig_data=True
             )
 
             orig_boxes.append([xmin, ymin, xmax, ymax])
-            
+
             # Resize the bounding boxes according to the
             # desired `width`, `height`.
             xmin_final = (xmin/image_width)*image_resized.shape[1]
@@ -135,15 +148,15 @@ class CustomDataset(Dataset):
             ymax_final = (ymax/image_height)*image_resized.shape[0]
 
             xmin_final, ymin_final, xmax_final, ymax_final = self.check_image_and_annotation(
-                xmin_final, 
-                ymin_final, 
-                xmax_final, 
-                ymax_final, 
-                image_resized.shape[1], 
+                xmin_final,
+                ymin_final,
+                xmax_final,
+                ymax_final,
+                image_resized.shape[1],
                 image_resized.shape[0],
                 orig_data=False
             )
-            
+
             boxes.append([xmin_final, ymin_final, xmax_final, ymax_final])
         # except:
         #     pass
@@ -160,13 +173,13 @@ class CustomDataset(Dataset):
             boxes, labels, area, iscrowd, (image_width, image_height)
 
     def check_image_and_annotation(
-        self, 
-        xmin, 
-        ymin, 
-        xmax, 
-        ymax, 
-        width, 
-        height, 
+        self,
+        xmin,
+        ymin,
+        xmax,
+        ymax,
+        width,
+        height,
         orig_data=False
     ):
         """
@@ -209,7 +222,7 @@ class CustomDataset(Dataset):
 
 
     def load_cutmix_image_and_boxes(self, index, resize_factor=512):
-        """ 
+        """
         Adapted from: https://www.kaggle.com/shonenkov/oof-evaluation-mixup-efficientdet
         """
         s = self.img_size
@@ -281,7 +294,7 @@ class CustomDataset(Dataset):
                 index=idx
             )
 
-        if self.train: 
+        if self.train:
             mosaic_prob = random.uniform(0.0, 1.0)
             if self.mosaic >= mosaic_prob:
                 image_resized, boxes, labels, \
@@ -328,47 +341,47 @@ class CustomDataset(Dataset):
 
 def collate_fn(batch):
     """
-    To handle the data loading as different images may have different number 
+    To handle the data loading as different images may have different number
     of objects and to handle varying size tensors as well.
     """
     return tuple(zip(*batch))
 
 # Prepare the final datasets and data loaders.
 def create_train_dataset(
-    train_dir_images, 
-    train_dir_labels, 
-    img_size, 
+    train_dir_images,
+    train_dir_labels,
+    img_size,
     classes,
     use_train_aug=False,
     mosaic=1.0,
     square_training=False
 ):
     train_dataset = CustomDataset(
-        train_dir_images, 
+        train_dir_images,
         train_dir_labels,
-        img_size, 
-        classes, 
+        img_size,
+        classes,
         get_train_transform(),
         use_train_aug=use_train_aug,
-        train=True, 
+        train=True,
         mosaic=mosaic,
         square_training=square_training
     )
     return train_dataset
 def create_valid_dataset(
-    valid_dir_images, 
-    valid_dir_labels, 
-    img_size, 
+    valid_dir_images,
+    valid_dir_labels,
+    img_size,
     classes,
     square_training=False
 ):
     valid_dataset = CustomDataset(
-        valid_dir_images, 
-        valid_dir_labels, 
-        img_size, 
-        classes, 
+        valid_dir_images,
+        valid_dir_labels,
+        img_size,
+        classes,
         get_valid_transform(),
-        train=False, 
+        train=False,
         square_training=square_training
     )
     return valid_dataset

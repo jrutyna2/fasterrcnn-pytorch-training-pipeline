@@ -1,0 +1,16 @@
+# Images and labels directory should be relative to train.py
+TRAIN_DIR_IMAGES: 'data/train'
+TRAIN_DIR_LABELS: 'data/train'
+VALID_DIR_IMAGES: 'data/validation'
+VALID_DIR_LABELS: 'data/validation'
+TEST_DIR_IMAGES: 'data/test'
+TEST_DIR_LABELS: 'data/test'
+
+# Class names
+CLASSES: ['__background__', 'Penguin', 'Kangaroo', 'Scorpion', 'Tree', 'Flower', 'Watch', 'Camera', 'Helicopter', 'Guitar', 'Microphone']
+
+# Number of classes (object classes + 1 for background class in Faster RCNN)
+NC: 11
+
+# Whether to save the predictions of the validation set while training
+SAVE_VALID_PREDICTION_IMAGES: True

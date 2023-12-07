@@ -1,7 +1,6 @@
 import math
 import sys
 import time
-
 import torch
 import torchvision.models.detection.mask_rcnn
 from torch_utils import utils
@@ -9,14 +8,16 @@ from torch_utils.coco_eval import CocoEvaluator
 from torch_utils.coco_utils import get_coco_api_from_dataset
 from utils.general import save_validation_results
 import numpy as np
+import wandb
+
 def train_one_epoch(
-    model, 
-    optimizer, 
-    data_loader, 
-    device, 
-    epoch, 
+    model,
+    optimizer,
+    data_loader,
+    device,
+    epoch,
     train_loss_hist,
-    print_freq, 
+    print_freq,
     scaler=None,
     scheduler=None
 ):
@@ -46,7 +47,6 @@ def train_one_epoch(
         step_counter += 1
         images = list(image.to(device) for image in images)
         targets = [{k: v.to(device).to(torch.int64) for k, v in t.items()} for t in targets]
-
 
         with torch.cuda.amp.autocast(enabled=scaler is not None):
             loss_dict = model(images, targets)
@@ -78,6 +78,18 @@ def train_one_epoch(
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
+        # Log metrics to wandb after every batch                                                            jrutyna
+        wandb.log({
+            "epoch": epoch,
+            "batch_loss": loss_value,
+            "loss_classifier": loss_dict_reduced['loss_classifier'].item(),
+            "loss_box_reg": loss_dict_reduced['loss_box_reg'].item(),
+            "loss_objectness": loss_dict_reduced['loss_objectness'].item(),
+            "loss_rpn_box_reg": loss_dict_reduced['loss_rpn_box_reg'].item(),
+            "lr": optimizer.param_groups[0]["lr"]
+        }, step=epoch * len(data_loader) + step_counter)    # len(data_loader) = number of batches in each epoch
+                                                            # step_counter = batch number within the current epoch
+
         batch_loss_list.append(loss_value)
         batch_loss_cls_list.append(loss_dict_reduced['loss_classifier'].detach().cpu())
         batch_loss_box_reg_list.append(loss_dict_reduced['loss_box_reg'].detach().cpu())
@@ -89,11 +101,11 @@ def train_one_epoch(
             scheduler.step(epoch + (step_counter/len(data_loader)))
 
     return (
-        metric_logger, 
-        batch_loss_list, 
-        batch_loss_cls_list, 
-        batch_loss_box_reg_list, 
-        batch_loss_objectness_list, 
+        metric_logger,
+        batch_loss_list,
+        batch_loss_cls_list,
+        batch_loss_box_reg_list,
+        batch_loss_objectness_list,
         batch_loss_rpn_list
     )
 
@@ -112,9 +124,9 @@ def _get_iou_types(model):
 
 @torch.inference_mode()
 def evaluate(
-    model, 
-    data_loader, 
-    device, 
+    model,
+    data_loader,
+    device,
     save_valid_preds=False,
     out_dir=None,
     classes=None,
@@ -160,7 +172,7 @@ def evaluate(
             )
         elif save_valid_preds == False and counter == 1:
             val_saved_image = np.ones((1, 64, 64, 3))
-            
+
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
