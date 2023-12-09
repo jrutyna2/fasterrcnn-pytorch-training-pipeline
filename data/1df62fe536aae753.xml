@@ -1,0 +1,1 @@
+<annotation><folder>Kangaroo</folder><filename>1df62fe536aae753.xml</filename><object><name>Kangaroo</name><pose>Unspecified</pose><truncated>0</truncated><difficult>0</difficult><bndbox><xmin>0.0</xmin><ymin>39.488256</ymin><xmax>849.532928</xmax><ymax>675.2171519999999</ymax></bndbox></object></annotation>

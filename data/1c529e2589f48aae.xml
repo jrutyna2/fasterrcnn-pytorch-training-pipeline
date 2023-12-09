@@ -1,0 +1,1 @@
+<annotation><folder>Helicopter</folder><filename>1c529e2589f48aae.xml</filename><object><name>Helicopter</name><pose>Unspecified</pose><truncated>0</truncated><difficult>0</difficult><bndbox><xmin>51.088384</xmin><ymin>66.54284</ymin><xmax>970.75712</xmax><ymax>370.99753599999997</ymax></bndbox></object></annotation>
