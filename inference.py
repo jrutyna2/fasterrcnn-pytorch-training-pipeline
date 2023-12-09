@@ -32,54 +32,54 @@ def collect_all_images(dir_test):
             test_images.extend(glob.glob(f"{dir_test}/{file_type}"))
     else:
         test_images.append(dir_test)
-    return test_images    
+    return test_images
 
 def parse_opt():
     # Construct the argument parser.
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-i', '--input', 
+        '-i', '--input',
         help='folder path to input input image (one image or a folder path)',
     )
     parser.add_argument(
-        '--data', 
+        '--data',
         default=None,
         help='(optional) path to the data config file'
     )
     parser.add_argument(
-        '-m', '--model', 
+        '-m', '--model',
         default=None,
         help='name of the model'
     )
     parser.add_argument(
-        '-w', '--weights', 
+        '-w', '--weights',
         default=None,
         help='path to trained checkpoint weights if providing custom YAML file'
     )
     parser.add_argument(
-        '-th', '--threshold', 
-        default=0.3, 
+        '-th', '--threshold',
+        default=0.3,
         type=float,
         help='detection threshold'
     )
     parser.add_argument(
-        '-si', '--show',  
+        '-si', '--show',
         action='store_true',
         help='visualize output only if this argument is passed'
     )
     parser.add_argument(
-        '-mpl', '--mpl-show', 
-        dest='mpl_show', 
+        '-mpl', '--mpl-show',
+        dest='mpl_show',
         action='store_true',
         help='visualize using matplotlib, helpful in notebooks'
     )
     parser.add_argument(
-        '-d', '--device', 
+        '-d', '--device',
         default=torch.device('cuda:0' if torch.cuda.is_available() else 'cpu'),
         help='computation/training device, default is GPU if GPU present'
     )
     parser.add_argument(
-        '-ims', '--imgsz', 
+        '-ims', '--imgsz',
         default=None,
         type=int,
         help='resize image to, by default use the original frame/image size'
@@ -133,7 +133,7 @@ def main(args):
 
     # Load the pretrained model
     if args['weights'] is None:
-        # If the config file is still None, 
+        # If the config file is still None,
         # then load the default one for COCO.
         if data_configs is None:
             with open(os.path.join('data_configs', 'test_image_config.yaml')) as file:
@@ -185,6 +185,7 @@ def main(args):
         image_name = test_images[i].split(os.path.sep)[-1].split('.')[0]
         orig_image = cv2.imread(test_images[i])
         frame_height, frame_width, _ = orig_image.shape
+
         if args['imgsz'] != None:
             RESIZE_TO = args['imgsz']
         else:
@@ -217,16 +218,26 @@ def main(args):
             log_to_json(orig_image, os.path.join(OUT_DIR, 'log.json'), outputs)
         # Carry further only if there are detected boxes.
         if len(outputs[0]['boxes']) != 0:
+            # Save bounding box data to .txt file
+            bbox_file_path = os.path.join(OUT_DIR, f"{image_name}.txt")
+            with open(bbox_file_path, 'w') as bbox_file:
+                for box, score, cls in zip(outputs[0]['boxes'], outputs[0]['scores'], outputs[0]['labels']):
+                    if score >= detection_threshold:
+                        # Convert tensor to numpy array and round off
+                        box = box.numpy().round(2)
+                        cls = CLASSES[cls]  # Convert class index to class label
+                        bbox_file.write(f"{cls} {score.item():.2f} {box[0]} {box[1]} {box[2]} {box[3]}\n")
+            
             draw_boxes, pred_classes, scores = convert_detections(
                 outputs, detection_threshold, CLASSES, args
             )
             orig_image = inference_annotations(
-                draw_boxes, 
-                pred_classes, 
+                draw_boxes,
+                pred_classes,
                 scores,
                 CLASSES,
-                COLORS, 
-                orig_image, 
+                COLORS,
+                orig_image,
                 image_resized,
                 args
             )

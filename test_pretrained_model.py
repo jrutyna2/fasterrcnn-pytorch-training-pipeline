@@ -1,4 +1,5 @@
-# 21 minutes to  run
+# 22 minutes to  run CPU
+#
 import os
 import torch
 import torchvision.transforms as transforms
@@ -11,8 +12,7 @@ from PIL import Image, ImageDraw
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load the pre-trained model
-# model = fasterrcnn_resnet50_fpn(pretrained=True)
-model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+model = fasterrcnn_resnet50_fpn(weights='/Volumes/PHD 3.0 Silicon-Power Media/Final Project/Faster-RCNN/training/training_results/best_model.pth')
 model = model.to(device)
 model.eval()
 
@@ -24,7 +24,8 @@ def transform_function(image):
     return transform(image)
 
 # Prepare the data loader
-dataset = CustomDataset('/Volumes/PHD 3.0 Silicon-Power Media/Dec 2023/OIDv4_ToolKit copy/OID/Dataset/test', transform=transform_function)
+dataset = CustomDataset('/Volumes/PHD 3.0 Silicon-Power Media/Dec 2023/OIDv4_ToolKit fastrcnn/OID/Dataset_fasterrcnn/test', transform=transform_function)
+# dataset = CustomDataset('/content/drive/MyDrive/Dataset_fasterrcnn/test', transform=transform_function)
 data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 # COCO class labels
@@ -57,11 +58,23 @@ for i, (images, image_paths) in enumerate(data_loader):
         original_image_name = os.path.splitext(os.path.basename(image_path))[0]
 
         # Draw bounding boxes and labels
-        image = Image.fromarray(images[j].mul(255).permute(1, 2, 0).byte().numpy())
+#        image = Image.fromarray(images[j].mul(255).permute(1, 2, 0).byte().numpy())
+        image = Image.fromarray(images[j].mul(255).permute(1, 2, 0).byte().cpu().numpy())
+
         draw = ImageDraw.Draw(image)
 
+        if not os.path.exists('results_untrained'):
+            os.makedirs('results_untrained')
+
+        # Directory for saving results
+        results_dir = 'results_untrained'
+
+        # Check if the directory exists, and if not, create it
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+
         # Open a text file to save bounding box data
-        with open(f'results_pretrain/{original_image_name}.txt', 'w') as f:
+        with open(f'results_untrained/{original_image_name}.txt', 'w') as f:
             for element in range(len(prediction['boxes'])):
                 boxes = prediction['boxes'][element].cpu().numpy()
                 score = prediction['scores'][element].cpu().numpy()
@@ -80,77 +93,4 @@ for i, (images, image_paths) in enumerate(data_loader):
                     draw.text((boxes[0], boxes[1]), text=label_text)
 
         # Save the image with original name
-        image.save(f'results_pretrain/{original_image_name}.png')
-        # image.save(f'results_pretrain/image_{i}.png')
-#
-#
-# # Run inference and visualize results
-# for i, images in enumerate(data_loader):
-#     print(f"Processing image {i+1}/{len(dataset)}")
-#     images = list(img.to(device) for img in images)
-#     with torch.no_grad():
-#         predictions = model(images)
-#
-#     # Process predictions for each image
-#     for j, prediction in enumerate(predictions):
-#         # Draw bounding boxes and labels
-#         image = Image.fromarray(images[j].mul(255).permute(1, 2, 0).byte().numpy())
-#         draw = ImageDraw.Draw(image)
-#         for element in range(len(prediction['boxes'])):
-#             boxes = prediction['boxes'][element].cpu().numpy()
-#             score = prediction['scores'][element].cpu().numpy()
-#             label_id = prediction['labels'][element].cpu().numpy()
-#             if 0 < label_id <= len(COCO_LABELS):  # Check if label_id is within the valid range
-#                 label = COCO_LABELS[label_id - 1]  # COCO labels are 1-indexed
-#             else:
-#                 label = "Unknown"
-#             if score > 0.5:  # Threshold
-#                 draw.rectangle([(boxes[0], boxes[1]), (boxes[2], boxes[3])], outline="red")
-#                 label_text = f"{label}: {score:.2f}"
-#                 draw.text((boxes[0], boxes[1]), text=label_text)
-#
-#         image.save(f'results_pretrain/image_{i}.png')
-
-# # Run inference and visualize results
-# for i, images in enumerate(data_loader):
-#     print(f"Processing image {i+1}/{len(dataset)}")
-#     images = list(img.to(device) for img in images)
-#     with torch.no_grad():
-#         predictions = model(images)
-#
-#     # Process predictions for each image
-#     for j, prediction in enumerate(predictions):
-#         # Draw bounding boxes and save images
-#         image = Image.fromarray(images[j].mul(255).permute(1, 2, 0).byte().numpy())
-#         draw = ImageDraw.Draw(image)
-#         for element in range(len(prediction['boxes'])):
-#             boxes = prediction['boxes'][element].cpu().numpy()
-#             score = prediction['scores'][element].cpu().numpy()
-#             if score > 0.5:  # Threshold
-#                 draw.rectangle([(boxes[0], boxes[1]), (boxes[2], boxes[3])], outline="red")
-#                 draw.text((boxes[0], boxes[1]), text=str(score))
-#
-#         image.save(f'results_pretrain/image_{i}.png')
-
-# # Run inference and visualize results
-# for images in data_loader:
-#     images = list(img.to(device) for img in images)
-#     with torch.no_grad():
-#         predictions = model(images)
-#
-#     # Process predictions for each image
-#     for i, prediction in enumerate(predictions):
-#         # Draw bounding boxes and save images
-#         image = Image.fromarray(images[i].mul(255).permute(1, 2, 0).byte().numpy())
-#         draw = ImageDraw.Draw(image)
-#         for element in range(len(prediction['boxes'])):
-#             boxes = prediction['boxes'][element].cpu().numpy()
-#             score = prediction['scores'][element].cpu().numpy()
-#             if score > 0.5:  # Threshold
-#                 draw.rectangle([(boxes[0], boxes[1]), (boxes[2], boxes[3])], outline="red")
-#                 draw.text((boxes[0], boxes[1]), text=str(score))
-#
-#         image.save(f'results_pretrain/image_{i}.png')
-
-# Evaluate performance
-# ...
+        image.save(f'results_untrained/{original_image_name}.png')

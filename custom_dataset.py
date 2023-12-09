@@ -26,11 +26,3 @@ class CustomDataset(Dataset):
             image = self.transform(image)
 
         return image, img_name
-
-# Example usage
-dataset = CustomDataset(
-    root_dir='/Volumes/PHD 3.0 Silicon-Power Media/Dec 2023/OIDv4_ToolKit copy/OID/Dataset/test',
-    transform=transforms.Compose([
-        transforms.ToTensor(),
-    ])
-)
