@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Load the pre-trained model
-model = fasterrcnn_resnet50_fpn(weights='/Volumes/PHD 3.0 Silicon-Power Media/Final Project/Faster-RCNN/training/training_results/best_model.pth')
+model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
 model = model.to(device)
 model.eval()
 
@@ -24,8 +24,7 @@ def transform_function(image):
     return transform(image)
 
 # Prepare the data loader
-dataset = CustomDataset('/Volumes/PHD 3.0 Silicon-Power Media/Dec 2023/OIDv4_ToolKit fastrcnn/OID/Dataset_fasterrcnn/test', transform=transform_function)
-# dataset = CustomDataset('/content/drive/MyDrive/Dataset_fasterrcnn/test', transform=transform_function)
+dataset = CustomDataset('/content/drive/MyDrive/Dataset_fasterrcnn/test', transform=transform_function)
 data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 # COCO class labels
