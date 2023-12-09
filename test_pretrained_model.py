@@ -24,7 +24,8 @@ def transform_function(image):
     return transform(image)
 
 # Prepare the data loader
-dataset = CustomDataset('/content/drive/MyDrive/Dataset_fasterrcnn/test', transform=transform_function)
+# dataset = CustomDataset('/content/drive/MyDrive/Dataset_fasterrcnn/test', transform=transform_function)
+dataset = CustomDataset('data/', transform=transform_function)
 data_loader = DataLoader(dataset, batch_size=1, shuffle=False)
 
 # COCO class labels
