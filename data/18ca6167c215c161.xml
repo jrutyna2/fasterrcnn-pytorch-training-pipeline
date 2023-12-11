@@ -1,0 +1,1 @@
+<annotation><folder>Flower</folder><filename>18ca6167c215c161.xml</filename><object><name>Flower</name><pose>Unspecified</pose><truncated>0</truncated><difficult>0</difficult><bndbox><xmin>139.57632</xmin><ymin>0.0</ymin><xmax>768.91136</xmax><ymax>628.8253440000001</ymax></bndbox></object></annotation>

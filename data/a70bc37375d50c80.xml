@@ -1,0 +1,1 @@
+<annotation><folder>Camera</folder><filename>a70bc37375d50c80.xml</filename><object><name>Camera</name><pose>Unspecified</pose><truncated>0</truncated><difficult>0</difficult><bndbox><xmin>230.240256</xmin><ymin>289.572864</ymin><xmax>499.25632</xmax><ymax>426.725376</ymax></bndbox></object></annotation>
