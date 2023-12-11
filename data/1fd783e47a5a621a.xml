@@ -1,0 +1,1 @@
+<annotation><folder>Microphone</folder><filename>1fd783e47a5a621a.xml</filename><object><name>Microphone</name><pose>Unspecified</pose><truncated>0</truncated><difficult>0</difficult><bndbox><xmin>0.173568</xmin><ymin>409.6512</ymin><xmax>394.81728</xmax><ymax>557.765632</ymax></bndbox></object></annotation>
